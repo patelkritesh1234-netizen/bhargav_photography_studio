@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bhargav Photography - Responsive Persistent Gallery</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  /* Reset & base styles */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #121212;
+    font-family: 'Poppins', sans-serif;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(90deg, #283e51, #485563);
+    padding: 2rem 4rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+  }
+  main {
+    flex-grow: 1;
+    max-width: 1000px;
+    margin: 2rem auto 3rem;
+    padding: 0 2rem;
+    text-align: center;
+  }
+  label.upload-label {
+    font-weight: 600;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #eeeeee;
+    padding: 0.7rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 35px;
+    box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+    user-select: none;
+    display: inline-block;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  label.upload-label:hover {
+    box-shadow: 0 10px 30px rgba(118, 75, 162, 0.7);
+    transform: scale(1.05);
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .gallery {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-gap: 22px;
+  }
+  .gallery img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .gallery img:hover {
+    transform: scale(1.07);
+    box-shadow: 0 15px 45px rgba(118, 75, 162, 0.8);
+  }
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    padding-top: 80px;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.95);
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    max-width: 80%;
+    max-height: 80vh;
+    border-radius: 20px;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.7);
+  }
+  #caption {
+    margin: 1rem auto 0;
+    width: 80%;
+    max-width: 800px;
+    text-align: center;
+    color: #aaa;
+    font-size: 1rem;
+    user-select: text;
+  }
+  .close-btn {
+    position: fixed;
+    top: 30px;
+    right: 40px;
+    font-size: 3rem;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+    transition: color 0.3s ease;
+    user-select: none;
+  }
+  .close-btn:hover {
+    color: #764ba2;
+  }
+  /* Login modal */
+  .modal.login-modal .modal-content {
+    max-width: 320px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    background: #222;
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(118, 75, 162, 0.9);
+  }
+  .modal.login-modal input {
+    width: 100%;
+    margin: 0.6rem 0;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+    background: #333;
+    color: white;
+    font-size: 1rem;
+    user-select: text;
+  }
+  .modal.login-modal button {
+    margin-top: 1.2rem;
+    padding: 0.8rem 0;
+    font-weight: 600;
+    width: 100%;
+    background: #764ba2;
+    border: none;
+    border-radius: 30px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+  .modal.login-modal button:hover {
+    background: #5a368a;
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 1.8rem;
+    color: #aaa;
+    cursor: pointer;
+    user-select: none;
+  }
+  .modal-close:hover {
+    color: #fff;
+  }
+  @media (max-width: 600px) {
+    main {
+      padding: 0 1rem;
+      margin-bottom: 2rem;
+    }
+    .gallery {
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 17px;
+    }
+    .gallery img {
+      height: 140px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bhargav Photography - Upload Gallery</h1>
+</header>
+
+<main>
+  <label for="photoUpload" class="upload-label" id="uploadLabel" tabindex="0">Select Photos to Upload</label>
+  <input type="file" id="photoUpload" accept="image/*" multiple disabled aria-disabled="true" />
+
+  <div class="gallery" id="gallery" aria-live="polite" aria-label="Uploaded Photos Gallery"></div>
+</main>
+
+<!-- Image modal -->
+<div id="imgModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="caption" tabindex="-1" aria-hidden="true">
+  <span class="close-btn" id="modalClose" role="button" aria-label="Close Image Modal" tabindex="0">&times;</span>
+  <img class="modal-content" id="modalImg" alt="" />
+  <div id="caption"></div>
+</div>
+
+<!-- Login modal -->
+<div id="loginModal" class="modal login-modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle" tabindex="-1" aria-hidden="true">
+  <div class="modal-content">
+    <span id="loginClose" class="modal-close" role="button" aria-label="Close Login Modal" tabindex="0">&times;</span>
+    <h2 id="loginTitle">Login Required</h2>
+    <input type="text" id="loginUsername" placeholder="Username" autocomplete="username" aria-label="Username" />
+    <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" aria-label="Password" />
+    <button id="loginSubmit">Login</button>
+    <p id="loginError" style="color:#e63946; margin-top:12px;" aria-live="assertive"></p>
+  </div>
+</div>
+
+<script>
+  const uploadLabel = document.getElementById('uploadLabel');
+  const uploadInput = document.getElementById('photoUpload');
+  const gallery = document.getElementById('gallery');
+
+  const loginModal = document.getElementById('loginModal');
+  const loginClose = document.getElementById('loginClose');
+  const loginSubmit = document.getElementById('loginSubmit');
+  const loginUsername = document.getElementById('loginUsername');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginError = document.getElementById('loginError');
+
+  const imgModal = document.getElementById('imgModal');
+  const modalImg = document.getElementById('modalImg');
+  const caption = document.getElementById('caption');
+  const modalClose = document.getElementById('modalClose');
+
+  const STORAGE_KEY = 'bhargavGalleryImages';
+
+  uploadInput.disabled = true;
+  uploadInput.setAttribute('aria-disabled', 'true');
+
+  // Show login modal on upload label click or keyboard enter
+  uploadLabel.addEventListener('click', (e) => {
+    if(uploadInput.disabled){
+      e.preventDefault();
+      openLoginModal();
+    }
+  });
+  uploadLabel.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && uploadInput.disabled){
+      e.preventDefault();
+      openLoginModal();
+    }
+  });
+
+  function openLoginModal() {
+    loginError.textContent = '';
+    loginUsername.value = '';
+    loginPassword.value = '';
+    loginModal.style.display = 'flex';
+    loginModal.setAttribute('aria-hidden', 'false');
+    loginUsername.focus();
+  }
+
+  loginClose.addEventListener('click', () => {
+    loginModal.style.display = 'none';
+    loginModal.setAttribute('aria-hidden', 'true');
+  });
+  loginClose.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' ') {
+      loginModal.style.display = 'none';
+      loginModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  loginSubmit.addEventListener('click', () => {
+    const user = loginUsername.value.trim();
+    const pass = loginPassword.value;
+    if(user === 'bhargav' && pass === '12345') {
+      loginError.textContent = '';
+      loginModal.style.display = 'none';
+      loginModal.setAttribute('aria-hidden', 'true');
+      uploadInput.disabled = false;
+      uploadInput.removeAttribute('aria-disabled');
+      alert('Login successful! You can now upload photos.');
+      uploadInput.focus();
+    } else {
+      loginError.textContent = 'Invalid username or password, please try again.';
+    }
+  });
+
+  // Load images from localStorage
+  function loadImages() {
+    const savedImages = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    savedImages.forEach(({src, alt}) => addImage(src, alt));
+  }
+
+  function saveImage(src, alt) {
+    let savedImages = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    savedImages.push({src, alt});
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedImages));
+  }
+
+  function addImage(src, alt) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = alt;
+    img.tabIndex = 0;
+    img.addEventListener('click', () => openImageModal(img));
+    img.addEventListener('keypress', (e) => { if(e.key === 'Enter') openImageModal(img); });
+    gallery.appendChild(img);
+  }
+
+  uploadInput.addEventListener('change', function() {
+    const files = Array.from(this.files);
+    files.forEach(file => {
+      if(!file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        addImage(e.target.result, file.name);
+        saveImage(e.target.result, file.name);
+      };
+      reader.readAsDataURL(file);
+    });
+    this.value = '';
+  });
+
+  function openImageModal(img) {
+    imgModal.style.display = 'flex';
+    modalImg.src = img.src;
+    modalImg.alt = img.alt;
+    caption.textContent = img.alt;
+    document.body.style.overflow = 'hidden';
+    imgModal.focus();
+  }
+
+  modalClose.addEventListener('click', closeImageModal);
+  imgModal.addEventListener('click', (e) => { if(e.target === imgModal) closeImageModal(); });
+  imgModal.addEventListener('keydown', e => { if(e.key === 'Escape') closeImageModal(); });
+
+  function closeImageModal() {
+    imgModal.style.display = 'none';
+    modalImg.src = '';
+    modalImg.alt = '';
+    caption.textContent = '';
+    document.body.style.overflow = '';
+  }
+
+  window.addEventListener('DOMContentLoaded', loadImages);
+</script>
+
+</body>
+</html>
